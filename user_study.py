@@ -1,8 +1,6 @@
 import sys
-import termios
 import threading
 import time
-import tty
 import uuid
 import select
 
@@ -12,45 +10,45 @@ import pandas as pd
 from classes import Dataset
 
 
-def get_user_response(time=None):
-    print("Press the left arrow key for A, the right arrow key for B")
+def get_user_response(time_limit=None):
+    print("_"*50)
+    print("Press the A key for A, press B key for B")
     if time is not None:
         print(f"You only have {time}s to answer.")
 
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-    response = {'answered': False, 'response': 'no answer'}
-
     def timer():
-        nonlocal response
-        time.sleep(time)
-        if not response['answered']:
-            response['answered'] = True
+        t = 0
+        while t < time_limit and not stop_flag.is_set():
+            t += 1
+            time.sleep(1)
+            sys.stdout.write("\r" + f"{t} of {time_limit}s")
+            sys.stdout.flush()
 
-    if time is not None:
-        timer_thread = threading.Thread(target=timer)
-        timer_thread.start()
+    stop_flag = threading.Event()
+    timer_thread = threading.Thread(target=timer)
+    timer_thread.start()
 
-    try:
-        tty.setraw(sys.stdin.fileno())
-        while not response['answered']:
-            if select.select([sys.stdin], [], [], 0.1)[0]:
-                key = sys.stdin.read(3)
-                if key == '\x1b[D':  # Left arrow key code
-                    response = {'answered': True, 'response': 'A'}
-                elif key == '\x1b[C':  # Right arrow key code
-                    response = {'answered': True, 'response': 'B'}
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    a, b, c = select.select([sys.stdin], [], [], time_limit)
+    stop_flag.set()
+    timer_thread.join()
 
-    return 0 if response['response'] == "A" else 1
+    # Run if statement till the time is running
+    if (a):
+        r = sys.stdin.readline().strip()
+        print(f"Your answer: {r}")
+        print("="*50)
+        return 0 if r.lower() == "a" else "b"
+    else:
+        print("You failed to answer in time! Assuming reject.")
+        print("="*50)
+        return None
 
 
 def save_responses(responses, participant_id, session_id, mode):
     pd.DataFrame.from_records(responses).to_csv(f"{participant_id}_{mode}_{session_id}.csv")
 
 
-def run_experiment(instructions, mode="long", ai_model=None, timing=5):
+def run_experiment(instructions, mode="long", ai_model=None, timing=None):
     assert mode in ["long", "short", "ai"], "Provided mode needs to be either long, short or ai"
 
     dataset = Dataset()
@@ -61,12 +59,10 @@ def run_experiment(instructions, mode="long", ai_model=None, timing=5):
     print(f"Thanks for joining {participant_id}. Your unique session ID: {unique_session_id}")
     print("-"*10)
 
-    input("Are you ready to start? Press any key")
+    input("Are you ready to start? Press enter to continue...")
 
-    if mode in ["short", "ai"] and (timing is None or timing <= 0):
-        timing = 5
-    else:
-        timing = None
+    if mode in ["short", "ai"] and timing is None:
+        timing = 10
 
     for problem in dataset:
         choiceA, choiceB = problem["A"], problem["B"]
@@ -76,8 +72,8 @@ def run_experiment(instructions, mode="long", ai_model=None, timing=5):
 
         # get the user's answer
         start_time = time.time()
-        response = get_user_response()
-        end_time = time.time(timing)
+        response = get_user_response(timing)
+        end_time = time.time()
         time_first_response = end_time - start_time
 
         # provide the user with a recommendation, if ai model is provided
@@ -107,4 +103,4 @@ def run_experiment(instructions, mode="long", ai_model=None, timing=5):
 
 
 if __name__ == "__main__":
-    run_experiment("Please decide", "long")
+    run_experiment("Please decide", "short")
