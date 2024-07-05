@@ -1,5 +1,6 @@
 from typing import List
 
+import numpy as np
 import pandas as pd
 
 class User:
@@ -52,3 +53,10 @@ class Dataset:
     def __iter__(self):
         for p in self.data.index:
             yield self[p]
+
+    def get_split(self, train_prop):
+        assert train_prop <= 1, "provided train proportion is not in a valid range"
+
+        split_pos = min(round(len(self.data) * train_prop), len(self.data))
+
+        return self.data.iloc[0:split_pos], self.data.iloc[split_pos:]
