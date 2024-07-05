@@ -1,11 +1,13 @@
-import json
 import sys
 import termios
 import threading
 import time
-import msvcrt
 import tty
 import uuid
+import select
+
+import numpy as np
+import pandas as pd
 
 from classes import Dataset
 
@@ -25,29 +27,30 @@ def get_user_response(time=None):
         if not response['answered']:
             response['answered'] = True
 
-    timer_thread = threading.Thread(target=timer)
-    timer_thread.start()
+    if time is not None:
+        timer_thread = threading.Thread(target=timer)
+        timer_thread.start()
 
     try:
         tty.setraw(sys.stdin.fileno())
         while not response['answered']:
-            key = sys.stdin.read(3)
-            if key == '\x1b[D':  # Left arrow key code
-                response = {'answered': True, 'response': 'A'}
-            elif key == '\x1b[C':  # Right arrow key code
-                response = {'answered': True, 'response': 'B'}
+            if select.select([sys.stdin], [], [], 0.1)[0]:
+                key = sys.stdin.read(3)
+                if key == '\x1b[D':  # Left arrow key code
+                    response = {'answered': True, 'response': 'A'}
+                elif key == '\x1b[C':  # Right arrow key code
+                    response = {'answered': True, 'response': 'B'}
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
-    return response['response'] == "A"
+    return 0 if response['response'] == "A" else 1
 
 
-def save_responses(responses, filename):
-    with open(filename, 'w') as file:
-        json.dump(responses, file, indent=4)
+def save_responses(responses, participant_id, session_id, mode):
+    pd.DataFrame.from_records(responses).to_csv(f"{participant_id}_{mode}_{session_id}.csv")
 
 
-def run_experiment(instructions, mode="long", ai_model=None):
+def run_experiment(instructions, mode="long", ai_model=None, timing=5):
     assert mode in ["long", "short", "ai"], "Provided mode needs to be either long, short or ai"
 
     dataset = Dataset()
@@ -56,9 +59,14 @@ def run_experiment(instructions, mode="long", ai_model=None):
     participant_id = input("Please enter your participant ID: ")
     unique_session_id = str(uuid.uuid4())
     print(f"Thanks for joining {participant_id}. Your unique session ID: {unique_session_id}")
+    print("-"*10)
 
-    if mode in ["short", "ai"]:
+    input("Are you ready to start? Press any key")
 
+    if mode in ["short", "ai"] and (timing is None or timing <= 0):
+        timing = 5
+    else:
+        timing = None
 
     for problem in dataset:
         choiceA, choiceB = problem["A"], problem["B"]
@@ -69,29 +77,34 @@ def run_experiment(instructions, mode="long", ai_model=None):
         # get the user's answer
         start_time = time.time()
         response = get_user_response()
-        end_time = time.time()
-        guts_feeling_timing = end_time - start_time
+        end_time = time.time(timing)
+        time_first_response = end_time - start_time
 
         # provide the user with a recommendation, if ai model is provided
-        if ai_model is not None:
-            # todo add a time limit for accepting the AI suggestion
+        if mode == "ai":
             recommendation = ai_model.evaluate_problem([choiceA, choiceB])
 
-            if recommendation == 0:
-                pass
-            #todo feedback to the user by the AI
+            print(f"They AI thinks that {'A' if recommendation == 0 else 'B'} is the right answer.")
 
             start_time = time.time()
-            response = get_user_response()
+            response = get_user_response(timing)
             end_time = time.time()
             after_ai_rec_timing = end_time - start_time
+        else:
+            after_ai_rec_timing = np.nan
 
-            # present both outcomes of feedback
+        # no feedback prevented
 
-        user_responses.append({'problem': problem["Problem"], 'response': response, 'guts_feeling_timing': guts_feeling_timing})
+        # store result
+        user_responses.append({'problem_id': problem["Problem"],
+                               'response': response,
+                               'first_response_time': time_first_response,
+                               'after_ai_time': after_ai_rec_timing})
 
-    save_responses(user_responses, 'responses_.json')
+    save_responses(user_responses, participant_id, unique_session_id)
+
+    print("Thank you for participating!")
 
 
 if __name__ == "__main__":
-    main()
+    run_experiment("Please decide", "long")
