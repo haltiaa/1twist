@@ -67,6 +67,26 @@ def run_experiment(instructions, num_samples=30, mode="long", ai_model=None, tim
     if mode in ["short", "ai"] and timing is None:
         timing = 10
 
+    if mode == "ai":  # collect preferences
+        num_preference_samples = 30
+        train_responses = []
+
+        for ix, problem in reversed(dataset):
+            if ix >= num_preference_samples:
+                break
+
+            choiceA, choiceB = problem["A"], problem["B"]
+
+            print(instructions)
+            print(f"A (left): {choiceA}\t\tvs.\t\tB (right): {choiceB}")
+
+            response = get_user_response(None)
+            train_responses += [response]
+
+        print("Training your AI assistant!")
+        ai_model.update_from_query(dataset[:-num_preference_samples], train_responses)
+        print("Trained.")
+
     for ix, problem in enumerate(dataset):
         if ix >= num_samples:
             break
@@ -95,7 +115,7 @@ def run_experiment(instructions, num_samples=30, mode="long", ai_model=None, tim
         else:
             after_ai_rec_timing = np.nan
 
-        # no feedback prevented
+        # no feedback
 
         # store result
         user_responses.append({'problem_id': problem["Problem"],
