@@ -7,7 +7,8 @@ import select
 import numpy as np
 import pandas as pd
 
-from classes import Dataset
+from classes import Dataset, AI
+from models.SimpleUserModel import SimpleUserModel
 
 
 def get_user_response(time_limit=None):
@@ -51,7 +52,7 @@ def save_responses(responses, participant_id, session_id, mode):
     pd.DataFrame.from_records(responses).to_csv(f"./responses/{participant_id}_{mode}_{session_id}.csv", index=False)
 
 
-def run_experiment(instructions, num_samples=30, mode="long", ai_model=None, timing=None):
+def run_experiment(instructions, num_samples=30, num_training_samples=30, mode="long", ai_model=None, timing=None):
     assert mode in ["long", "short", "ai"], "Provided mode needs to be either long, short or ai"
 
     dataset = Dataset() # pick testset
@@ -68,11 +69,15 @@ def run_experiment(instructions, num_samples=30, mode="long", ai_model=None, tim
         timing = 10
 
     if mode == "ai":  # collect preferences
-        num_preference_samples = 30
+        print("We are now training our AI assistant.")
+        num_preference_samples = num_training_samples
         train_responses = []
 
-        for ix, problem in reversed(dataset):
-            if ix >= num_preference_samples:
+        for ix, problem in enumerate(dataset):
+            if ix <= num_samples:
+                continue
+
+            if ix >= num_preference_samples + num_samples:
                 break
 
             choiceA, choiceB = problem["A"], problem["B"]
@@ -86,6 +91,8 @@ def run_experiment(instructions, num_samples=30, mode="long", ai_model=None, tim
         print("Training your AI assistant!")
         ai_model.update_from_query(dataset[:-num_preference_samples], train_responses)
         print("Trained.")
+
+    input("Are you ready to start? Press enter to continue...")
 
     for ix, problem in enumerate(dataset):
         if ix >= num_samples:
@@ -129,4 +136,8 @@ def run_experiment(instructions, num_samples=30, mode="long", ai_model=None, tim
 
 
 if __name__ == "__main__":
-    run_experiment("Please decide", num_samples=30, mode="long")
+    #run_experiment("Please decide", num_samples=30, mode="long")
+    #run_experiment("Please decide", num_samples=30, mode="short")
+
+    ai = AI(SimpleUserModel())
+    run_experiment("Please decide", num_training_samples=3, num_samples=30, mode="ai", ai_model=ai)
