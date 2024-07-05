@@ -3,26 +3,25 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-class User:
-    pass
+from models.SimpleUserModel import SimpleUserModel as User
 
 class AI:
     def __init__(self, user: User):
         self.user = user
     
-    def evaluate_problem(self, problem: list):
+    def evaluate_problem(self, problem: pd.DataFrame):
         '''
         returns 0 for choice A or 1 for choice B
         '''
-        return self.user.evaluate(problem)
+        return self.user.generate_action_by_argmax(problem)
     
-    def update_from_query(self, problem, choice):
+    def update_from_query(self, problem: pd.DataFrame, choice: list):
         '''
         This function updates the user model based on a problem and choice. 
         
         To be used in the intial learning process 
         '''
-        self.user.update(problem, choice)
+        self.user.fit(problem, choice)
 
     def update_from_prompt(self, problem, choice, switch):
         '''
@@ -35,7 +34,7 @@ class AI:
     
 
 
-    
+
 
 
 
