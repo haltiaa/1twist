@@ -37,6 +37,7 @@ class SimpleUserModel :
     df_column_name_B = "B"
 
     def __init__(
+            self,
             use_bias   : bool       = True,
             build_model: bool       = True,
             load_model : str | None = None,
@@ -70,6 +71,7 @@ class SimpleUserModel :
 
 
     def build(
+            self,
             name:str            = "SimpleUserModel keras model",
             learning_rate:float = 0.001,
         ) -> tf.keras.Model :
@@ -102,7 +104,7 @@ class SimpleUserModel :
         return model
     
 
-    def _pipeline_df_to_aray(df: pd.DataFrame) -> np.ndarray :
+    def _pipeline_df_to_aray(self, df: pd.DataFrame) -> np.ndarray :
         """
         """
         ##  Extract A and B from table
@@ -136,7 +138,7 @@ class SimpleUserModel :
         return X
 
 
-    def generate_action_by_sampling(X: pd.DataFrame) -> np.ndarray :
+    def generate_action_by_sampling(self, X: pd.DataFrame) -> np.ndarray :
         """
         Sample predicted probabilities for table of A/B decisions
         Return shape [N] for N tests
@@ -144,7 +146,7 @@ class SimpleUserModel :
         raise NotImplementedError()
 
 
-    def generate_action_by_argmax(df: pd.DataFrame) -> np.ndarray :
+    def generate_action_by_argmax(self, X: pd.DataFrame) -> np.ndarray :
         """
         Return argmax over predicted probabilities for table of A/B decisions
         Return shape [N] for N tests
@@ -160,6 +162,7 @@ class SimpleUserModel :
 
 
     def fit(
+            self,
             X: pd.DataFrame,
             Y: list,    ## List of decisions, 0 for A, 1 for B
             **kwargs,
@@ -195,14 +198,14 @@ class SimpleUserModel :
         return self.model
 
 
-    def load(kerasname:str) -> None :
+    def load(self, kerasname:str) -> None :
         """
         Load a new tf keras model from keras file
         """
         raise NotImplementedError()
 
 
-    def predict_logits(df:pd.DataFrame) -> np.ndarray :
+    def predict_logits(self, df:pd.DataFrame) -> np.ndarray :
         """
         Generate predicted logits for table of A/B decisions
         Return shape [N x 2] for N tests
@@ -210,7 +213,7 @@ class SimpleUserModel :
         raise NotImplementedError()
 
 
-    def predict_probs(df:pd.DataFrame) -> np.ndarray :
+    def predict_probs(self, df:pd.DataFrame) -> np.ndarray :
         """
         Generate predictions for table of A/B decisions
         Return shape [N x 2] for N tests
@@ -218,7 +221,7 @@ class SimpleUserModel :
         raise NotImplementedError()
 
 
-    def save(kerasname:str) -> None :
+    def save(self, kerasname:str) -> None :
         """
         Save tf keras model to keras file
         """
