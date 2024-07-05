@@ -23,8 +23,11 @@ class AI:
     def update_from_prompt(self, problem, choice, switch):
         '''
         This is used to update the user model during the evaluation process.
-        It takes a problem, which has been presented to the user, a choice, and whether the user switched to another chocie if prompted to do so
+        It takes a problem, which has been presented to the user, a choice, and whether the user switched to another chocie if prompted to do so.
+        NOT IMPLEMENTED YET.
         '''
+        pass
+
     
 
 
