@@ -85,7 +85,7 @@ class SimpleUserModel :
         x = tf.keras.layers.Dense(1, activation="sigmoid")(x_in)
 
         ##  Create model
-        model = tf.keras.model.Model(x_in, x, name=name)
+        model = tf.keras.models.Model(x_in, x, name=name)
 
         ##  Create optimiser
         optimizer = tf.keras.optimizers.AdamW(learning_rate=learning_rate)
@@ -189,8 +189,8 @@ class SimpleUserModel :
         self.model.fit(
             X,
             Y,
-            validation_split = kwargs.get("validation_split", None),
-            epochs           = kwargs.get("epochs"          , 100 ),
+            validation_split = kwargs.get("validation_split", 0.3),
+            epochs           = kwargs.get("epochs"          , 100),
             callbacks        = callbacks,
         )
 
