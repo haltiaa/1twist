@@ -1,5 +1,9 @@
+from typing import List
+
 import pandas as pd
 
+class User:
+    pass
 
 class AI:
     def __init__(self, user: User):
@@ -23,8 +27,7 @@ class AI:
         '''
     
 
-class User:
-    pass
+
 
 
 class Dataset:
@@ -38,6 +41,7 @@ class Dataset:
         self.choices.set_index("Problem")
 
         self.data = self.problems.join(self.choices)
+        self.data = self.data[self.data["Amb"] == False]
 
     def __getitem__(self, item):
         return self.data.loc[item]
@@ -46,5 +50,5 @@ class Dataset:
         return len(self.data)
 
     def __iter__(self):
-        for p in self.problems.index:
+        for p in self.data.index:
             yield self[p]
