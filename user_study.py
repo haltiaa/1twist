@@ -74,10 +74,10 @@ def run_experiment(instructions, num_samples=30, num_training_samples=30, mode="
         train_responses = []
 
         for ix, problem in enumerate(dataset):
-            if ix <= num_samples:
+            if ix < num_samples:
                 continue
 
-            if ix >= num_preference_samples + num_samples:
+            if ix > num_preference_samples + num_samples:
                 break
 
             choiceA, choiceB = problem["A"], problem["B"]
@@ -86,10 +86,10 @@ def run_experiment(instructions, num_samples=30, num_training_samples=30, mode="
             print(f"A (left): {choiceA}\t\tvs.\t\tB (right): {choiceB}")
 
             response = get_user_response(None)
-            train_responses += [response]
+            train_responses += [float(response)]
 
         print("Training your AI assistant!")
-        ai_model.update_from_query(dataset[:-num_preference_samples], train_responses)
+        ai_model.update_from_query(dataset[num_samples:num_samples+num_preference_samples], np.array(train_responses))
         print("Trained.")
 
     input("Are you ready to start? Press enter to continue...")
@@ -140,4 +140,4 @@ if __name__ == "__main__":
     #run_experiment("Please decide", num_samples=30, mode="short")
 
     ai = AI(SimpleUserModel())
-    run_experiment("Please decide", num_training_samples=3, num_samples=30, mode="ai", ai_model=ai)
+    run_experiment("Please decide", num_training_samples=10, num_samples=30, mode="ai", ai_model=ai)

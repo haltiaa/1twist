@@ -16,7 +16,6 @@ import pandas     as pd
 import tensorflow as tf
 
 ##  Get module-level logger
-logger = logging.getLogger("models.SimpleUserModel.py")
 
 
 class SimpleUserModel :
@@ -52,10 +51,6 @@ class SimpleUserModel :
             >  TO-DO
         """
         ##  Log construction of class
-        logging.debug(
-            f"Constructing SimpleUserModel class with parameters use_bias={use_bias}, \
-            build_model={build_model}, load_model={load_model}"
-        )
 
         ##  Set params
         self.use_bias = use_bias
@@ -74,7 +69,7 @@ class SimpleUserModel :
             self,
             name:str            = "SimpleUserModel keras model",
             learning_rate:float = 0.001,
-        ) -> tf.keras.Model :
+        ) -> tf.keras.models :
         """
         Build a new tf keras model; if one exists, it becomes re-initialised
         """
@@ -85,7 +80,7 @@ class SimpleUserModel :
         x = tf.keras.layers.Dense(1, activation="sigmoid")(x_in)
 
         ##  Create model
-        model = tf.keras.model.Model(x_in, x, name=name)
+        model = tf.keras.models.Model(x_in, x)
 
         ##  Create optimiser
         optimizer = tf.keras.optimizers.AdamW(learning_rate=learning_rate)
