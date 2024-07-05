@@ -77,7 +77,7 @@ def run_experiment(instructions, num_samples=30, num_training_samples=30, mode="
             if ix < num_samples:
                 continue
 
-            if ix > num_preference_samples + num_samples:
+            if ix >= num_preference_samples + num_samples:
                 break
 
             choiceA, choiceB = problem["A"], problem["B"]

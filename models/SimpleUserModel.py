@@ -147,7 +147,7 @@ class SimpleUserModel :
         Return shape [N] for N tests
         """
         ##  Get probs
-        Y = self._pipeline_df_to_tensor(X)
+        Y = self._pipeline_df_to_aray(X)
 
         ##  Generate action using argmax
         A = np.where(Y > 0.5, 0, 1)
