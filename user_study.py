@@ -13,8 +13,8 @@ from classes import Dataset
 def get_user_response(time_limit=None):
     print("_"*50)
     print("Press the A key for A, press B key for B")
-    if time is not None:
-        print(f"You only have {time}s to answer.")
+    if time_limit is not None:
+        print(f"You only have {time_limit}s to answer.")
 
     def timer():
         t = 0
@@ -24,20 +24,23 @@ def get_user_response(time_limit=None):
             sys.stdout.write("\r" + f"{t} of {time_limit}s")
             sys.stdout.flush()
 
-    stop_flag = threading.Event()
-    timer_thread = threading.Thread(target=timer)
-    timer_thread.start()
+    if time_limit is not None:
+        stop_flag = threading.Event()
+        timer_thread = threading.Thread(target=timer)
+        timer_thread.start()
 
     a, b, c = select.select([sys.stdin], [], [], time_limit)
-    stop_flag.set()
-    timer_thread.join()
+
+    if time_limit is not None:
+        stop_flag.set()
+        timer_thread.join()
 
     # Run if statement till the time is running
     if (a):
         r = sys.stdin.readline().strip()
         print(f"Your answer: {r}")
         print("="*50)
-        return 0 if r.lower() == "a" else "b"
+        return 0 if r.lower() == "a" else 1
     else:
         print("You failed to answer in time! Assuming reject.")
         print("="*50)
@@ -45,13 +48,13 @@ def get_user_response(time_limit=None):
 
 
 def save_responses(responses, participant_id, session_id, mode):
-    pd.DataFrame.from_records(responses).to_csv(f"{participant_id}_{mode}_{session_id}.csv")
+    pd.DataFrame.from_records(responses).to_csv(f"./responses/{participant_id}_{mode}_{session_id}.csv", index=False)
 
 
-def run_experiment(instructions, mode="long", ai_model=None, timing=None):
+def run_experiment(instructions, num_samples=30, mode="long", ai_model=None, timing=None):
     assert mode in ["long", "short", "ai"], "Provided mode needs to be either long, short or ai"
 
-    dataset = Dataset()
+    dataset = Dataset() # pick testset
     user_responses = []
 
     participant_id = input("Please enter your participant ID: ")
@@ -64,7 +67,10 @@ def run_experiment(instructions, mode="long", ai_model=None, timing=None):
     if mode in ["short", "ai"] and timing is None:
         timing = 10
 
-    for problem in dataset:
+    for ix, problem in enumerate(dataset):
+        if ix >= num_samples:
+            break
+
         choiceA, choiceB = problem["A"], problem["B"]
 
         print(instructions)
@@ -103,4 +109,4 @@ def run_experiment(instructions, mode="long", ai_model=None, timing=None):
 
 
 if __name__ == "__main__":
-    run_experiment("Please decide", "short")
+    run_experiment("Please decide", num_samples=30, mode="long")
