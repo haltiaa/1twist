@@ -21,7 +21,20 @@ logger = logging.getLogger("models.SimpleUserModel.py")
 
 class SimpleUserModel :
     """
+    CLASS DOCSTRING HERE
+
+    Inputs:
+        >  TO-DO
+
+    Returns:
+        >  TO-DO
     """
+
+    ##  List of lists
+    ##  "A" -> [[pH, Ha], [pL, La]]
+    ##  "B" -> [[pH, Hb], [pL, Lb]]
+    df_column_name_A = "A"
+    df_column_name_B = "B"
 
     def __init__(
             use_bias   : bool       = True,
@@ -29,6 +42,13 @@ class SimpleUserModel :
             load_model : str | None = None,
         ) -> None :
         """
+        Constuct instance of SimpleUserModel class
+
+        Inputs:
+            >  TO-DO
+
+        Returns:
+            >  TO-DO
         """
         ##  Log construction of class
         logging.debug(
@@ -49,14 +69,74 @@ class SimpleUserModel :
             self.load(load_model)
 
 
-    def build() -> tf.keras.Model :
+    def build(
+            name:str            = "SimpleUserModel keras model",
+            learning_rate:float = 0.001,
+        ) -> tf.keras.Model :
         """
-        Build a new tf keras model. If one exists, it becomes re-initialised
+        Build a new tf keras model; if one exists, it becomes re-initialised
         """
-        raise NotImplementedError()
+        ##  Input layer
+        x_in = tf.keras.layers.Input((4,))
+
+        ##  Linear transformation
+        x = tf.keras.layers.Dense(1, activation="sigmoid")(x_in)
+
+        ##  Create model
+        model = tf.keras.model.Model(x_in, x, name=name)
+
+        ##  Create optimiser
+        optimizer = tf.keras.optimizers.AdamW(learning_rate=learning_rate)
+
+        ##  Compile model
+        model.compile(
+            optimizer = optimizer,
+            loss      = "binary_crossentropy",
+            metrics   = "accuracy",
+        )
+
+        ##  Store model
+        self.model = model
+
+        ##  Return model
+        return model
+    
+
+    def _pipeline_df_to_aray(df: pd.DataFrame) -> np.ndarray :
+        """
+        """
+        ##  Extract A and B from table
+        A = df[self.df_column_name_A]
+        B = df[self.df_column_name_B]
+
+        ##  Extract rewards and probabilities for option A
+        p_Ha = np.array([item[0][0] for item in A])
+        Ha   = np.array([item[0][1] for item in A])
+        p_La = np.array([item[1][0] for item in A])
+        La   = np.array([item[1][1] for item in A])
+
+        ##  Calculate mean and std for option A
+        mean_a = p_Ha*Ha + p_La*La
+        std_a  = np.sqrt(p_Ha*np.power(Ha - mean_a, 2) + p_La*np.power(La - mean_a, 2))
+
+        ##  Extract rewards and probabilities for option B
+        p_Hb = np.array([item[0][0] for item in B])
+        Hb   = np.array([item[0][1] for item in B])
+        p_Lb = np.array([item[1][0] for item in B])
+        Lb   = np.array([item[1][1] for item in B])
+
+        ##  Calculate mean and std for option B
+        mean_b = p_Hb*Hb + p_Lb*Lb
+        std_b  = np.sqrt(p_Hb*np.power(Hb - mean_b, 2) + p_Lb*np.power(Lb - mean_b, 2))
+
+        ##  Create array
+        X = np.array([mean_a, std_a, mean_b, std_b]).transpose()
+
+        ##  return array
+        return X
 
 
-    def generate_action_by_sampling(df: pd.DataFrame) -> np.ndarray :
+    def generate_action_by_sampling(X: pd.DataFrame) -> np.ndarray :
         """
         Sample predicted probabilities for table of A/B decisions
         Return shape [N] for N tests
@@ -69,17 +149,50 @@ class SimpleUserModel :
         Return argmax over predicted probabilities for table of A/B decisions
         Return shape [N] for N tests
         """
-        raise NotImplementedError()
+        ##  Get probs
+        Y = self._pipeline_df_to_tensor(X)
+
+        ##  Generate action using argmax
+        A = np.where(Y > 0.5, 0, 1)
+
+        ##  Return action
+        return A
 
 
     def fit(
-            fit_data: pd.DataFrame,
+            X: pd.DataFrame,
+            Y: list,    ## List of decisions, 0 for A, 1 for B
             **kwargs,
-        ) -> None :
+        ) -> tf.keras.models.Model :
         """
         Fit the internal keras model to the given data
         """
-        raise NotImplementedError()
+
+        ##  Cast df to trainable tensor
+        X = self._pipeline_df_to_aray(X)
+
+        ##  Create training callbacks
+        callbacks = []
+        if kwargs.get("early_stopping", True) :
+            callbacks.append(
+                tf.keras.callbacks.EarlyStopping(
+                    restore_best_weights = True, 
+                    patience             = 3,
+                    monitor              = "val_loss",
+                )
+            )
+
+        ##  Fit model
+        self.model.fit(
+            X,
+            Y,
+            validation_split = kwargs.get("validation_split", None),
+            epochs           = kwargs.get("epochs"          , 100 ),
+            callbacks        = callbacks,
+        )
+
+        ##  Return model
+        return self.model
 
 
     def load(kerasname:str) -> None :

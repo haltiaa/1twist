@@ -22,8 +22,7 @@ class AI:
         
         To be used in the intial learning process 
         '''
-        data = pd.DataFrame({'A' : problem[0], 'B' : problem[1]})
-        self.user.fit(data, choice)
+        self.user.fit(problem, choice)
 
     def update_from_prompt(self, problem, choice, switch):
         '''
