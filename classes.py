@@ -9,11 +9,12 @@ class AI:
     def __init__(self, user: User):
         self.user = user
     
-    def evaluate_problem(self, problem: pd.DataFrame):
+    def evaluate_problem(self, problem: list):
         '''
         returns 0 for choice A or 1 for choice B
         '''
-        return self.user.generate_action_by_argmax(problem)
+        data = pd.DataFrame({'A' : problem[0], 'B' : problem[1]})
+        return self.user.generate_action_by_argmax(data)
     
     def update_from_query(self, problem: pd.DataFrame, choice: list):
         '''
@@ -21,7 +22,8 @@ class AI:
         
         To be used in the intial learning process 
         '''
-        self.user.fit(problem, choice)
+        data = pd.DataFrame({'A' : problem[0], 'B' : problem[1]})
+        self.user.fit(data, choice)
 
     def update_from_prompt(self, problem, choice, switch):
         '''
@@ -29,7 +31,7 @@ class AI:
         It takes a problem, which has been presented to the user, a choice, and whether the user switched to another chocie if prompted to do so.
         NOT IMPLEMENTED YET.
         '''
-        pass
+        raise NotImplementedError
 
     
 
