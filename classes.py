@@ -10,9 +10,12 @@ class AI:
     def __init__(self, user: User):
         self.user = user
     
-    def evaluate_problem(self, problem: List):
+    def evaluate_problem(self, problem: list):
+        '''
+        returns 0 for choice A or 1 for choice B
+        '''
         return self.user.evaluate(problem)
-
+    
     def update_from_query(self, problem, choice):
         '''
         This function updates the user model based on a problem and choice. 
