@@ -83,7 +83,7 @@ def run_experiment(instructions, mode="long", ai_model=None, timing=None):
             print(f"They AI thinks that {'A' if recommendation == 0 else 'B'} is the right answer.")
 
             start_time = time.time()
-            response = get_user_response(timing)
+            response = get_user_response(round(timing/2))
             end_time = time.time()
             after_ai_rec_timing = end_time - start_time
         else:
@@ -97,7 +97,7 @@ def run_experiment(instructions, mode="long", ai_model=None, timing=None):
                                'first_response_time': time_first_response,
                                'after_ai_time': after_ai_rec_timing})
 
-    save_responses(user_responses, participant_id, unique_session_id)
+    save_responses(user_responses, participant_id, unique_session_id, mode)
 
     print("Thank you for participating!")
 
